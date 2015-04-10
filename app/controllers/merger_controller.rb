@@ -1,23 +1,35 @@
 class MergerController < ApplicationController
-  require 'net/http'
-
-  API_URL = 'https://api.pelotoncycle.com/quiz/next/'
 
   def merge_streams
     ret = { :message => 'Error: Missing stream param(s)' }.to_json
     
-    stream1 = params[:stream1]
-    stream2 = params[:stream2]
+    stream1_name = params[:stream1]
+    stream2_name = params[:stream2]
     
     # ensure we have necessary params
-    unless stream1 and stream2
+    unless stream1_name and stream2_name
       render :json => ret
       return
     end
 
-    # get responses from api
-    response1 = get_api_response stream1
-    response2 = get_api_response stream2
+    # look up streams, or create new ones
+    stream1 = Stream.where('name = ?', stream1_name).first
+    if stream1.nil?
+      stream1 = Stream.create!(name: stream1_name)
+    end
+
+    stream2 = Stream.where('name = ?', stream2_name).first
+    if stream2.nil?
+      stream2 = Stream.create!(name: stream2_name)
+    end
+
+    # stream will have a last value of nil if it was just created
+    # and we dont need to poll for an updated value
+    if stream1.last.nil? or stream2.last.nil?
+      ret = {
+        
+      }
+    end
 
     
     render :json => { 
@@ -30,18 +42,4 @@ class MergerController < ApplicationController
     }.to_json
   end
 
-  private
-  
-  def get_api_response stream_name
-    uri = URI.parse(API_URL + stream_name)
-    #args = {include_entities: 0, include_rts: 0, screen_name: 'johndoe', count: 2, trim_user: 1}
-    #uri.query = URI.encode_www_form(args)
-    http = Net::HTTP.new(uri.host, uri.port)
-    http.use_ssl = true
-    
-    request = Net::HTTP::Get.new(uri.request_uri)
-    
-    response = http.request(request)
-    JSON.parse response.body
-  end
 end
