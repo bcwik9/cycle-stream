@@ -14,11 +14,12 @@
 ActiveRecord::Schema.define(version: 20150410043823) do
 
   create_table "streams", force: :cascade do |t|
-    t.string   "name"
-    t.integer  "current"
-    t.integer  "last"
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
+    t.string   "stream1name"
+    t.integer  "stream1value"
+    t.string   "stream2name"
+    t.integer  "stream2value"
+    t.datetime "created_at",   null: false
+    t.datetime "updated_at",   null: false
   end
 
 end

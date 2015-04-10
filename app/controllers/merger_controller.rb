@@ -1,45 +1,36 @@
 class MergerController < ApplicationController
 
   def merge_streams
-    ret = { :message => 'Error: Missing stream param(s)' }.to_json
+    ret = { :message => 'Error: Missing stream param(s)' }
     
     stream1_name = params[:stream1]
     stream2_name = params[:stream2]
     
     # ensure we have necessary params
     unless stream1_name and stream2_name
-      render :json => ret
+      render :json => ret.to_json
       return
     end
 
     # look up streams, or create new ones
-    stream1 = Stream.where('name = ?', stream1_name).first
-    if stream1.nil?
-      stream1 = Stream.create!(name: stream1_name)
+    stream = Stream.where('stream1name = ? AND stream2name = ?', stream1_name, stream2_name).first
+    if stream.nil?
+      just_created = true
+      stream = Stream.create!(stream1name: stream1_name, stream2name: stream2_name)
     end
 
-    stream2 = Stream.where('name = ?', stream2_name).first
-    if stream2.nil?
-      stream2 = Stream.create!(name: stream2_name)
-    end
-
-    # stream will have a last value of nil if it was just created
-    # and we dont need to poll for an updated value
-    if stream1.last.nil? or stream2.last.nil?
+    # if stream was just created, we don't have to update values
+    if just_created
       ret = {
-        
+        :last => nil,
+        :current => stream.min
       }
+    else
+      # grab new value for lowest stream
+      ret = stream.update_min
     end
-
     
-    render :json => { 
-      :status => :ok, 
-      :message => "Success!",
-      :html => "<b>congrats</b>",
-      :params => params,
-      :response1 => response1,
-      :response2 => response2
-    }.to_json
+    render :json => ret.to_json
   end
 
 end
